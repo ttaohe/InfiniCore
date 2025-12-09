@@ -95,3 +95,26 @@ def infinicore_to_numpy_dtype(infini_dtype):
         return np.uint8
     else:
         raise ValueError(f"Unsupported infinicore dtype: {infini_dtype}")
+
+
+def to_torch(tensor: "infinicore.tensor.Tensor"):
+    """
+    将 InfiniCore Tensor 转成 PyTorch Tensor（主要用于调试 / 轻量后处理）。
+
+    简化约定：
+      - 返回一个 **连续的** PyTorch Tensor，形状 / dtype / device 与原 Tensor 一致；
+      - 若原 Tensor 非连续，会在 InfiniCore 侧先 `contiguous()` 再拷贝数据。
+    """
+    import torch
+    from .tensor import from_torch as _from_torch
+
+    torch_result = torch.empty(
+        tensor.shape,
+        dtype=to_torch_dtype(tensor.dtype),
+        device=tensor.device.type,
+    )
+
+    src = tensor if tensor.is_contiguous() else tensor.contiguous()
+    temp_infini = _from_torch(torch_result)
+    temp_infini.copy_(src)
+    return torch_result

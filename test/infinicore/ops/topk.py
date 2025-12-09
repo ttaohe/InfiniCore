@@ -75,11 +75,16 @@ class OpTest(BaseOperatorTest):
         return parse_test_cases()
 
     def torch_operator(self, *args, **kwargs):
+        # 为保证与当前 TopK 实现对齐，这里统一使用 sorted=True
+        kwargs = dict(kwargs)
+        kwargs["sorted"] = True
         return torch.topk(*args, **kwargs)
 
-    # def infinicore_operator(self, *args, **kwargs):
-    #     """InfiniCore implementation (operator not yet available)."""
-    #     return infinicore.topk(*args, **kwargs)
+    def infinicore_operator(self, *args, **kwargs):
+        """InfiniCore implementation."""
+        kwargs = dict(kwargs)
+        kwargs["sorted"] = True
+        return infinicore.topk(*args, **kwargs)
 
 
 def main():

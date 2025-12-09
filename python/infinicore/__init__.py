@@ -40,11 +40,17 @@ from infinicore.dtype import (
     uint8,
 )
 from infinicore.ops.add import add
+from infinicore.ops.argmax import argmax
 from infinicore.ops.attention import attention
 from infinicore.ops.matmul import matmul
 from infinicore.ops.mul import mul
 from infinicore.ops.narrow import narrow
 from infinicore.ops.rearrange import rearrange
+from infinicore.ops.scatter_add import scatter_add
+from infinicore.ops.sum import sum
+from infinicore.ops.mean import mean
+from infinicore.ops.test_mul import test_mul
+from infinicore.ops.topk import topk
 from infinicore.tensor import (
     Tensor,
     empty,
@@ -100,9 +106,15 @@ __all__ = [
     "uint8",
     # Operations.
     "add",
+    "argmax",
     "attention",
     "matmul",
     "mul",
+    "scatter_add",
+    "sum",
+    "mean",
+    "test_mul",
+    "topk",
     "narrow",
     "rearrange",
     "empty",

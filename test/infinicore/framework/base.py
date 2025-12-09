@@ -567,7 +567,15 @@ class BaseOperatorTest(ABC):
             elif comparison_target == "out":
                 # Compare output tensor from kwargs (explicit output)
                 torch_comparison = kwargs.get("out")
-                infini_comparison = cloned_tensors[0]
+                # cloned_tensors 里可能包含为 dim 等非 Tensor 参数生成的中间列表，
+                # 这里选择第一个真正的张量作为 InfiniCore 对比目标。
+                infini_comparison = None
+                for ct in cloned_tensors:
+                    if not isinstance(ct, (list, tuple)):
+                        infini_comparison = ct
+                        break
+                if infini_comparison is None:
+                    raise ValueError("No valid cloned tensor found for 'out' comparison.")
             elif isinstance(comparison_target, int):
                 # Compare specific input tensor (in-place operation on input)
                 if 0 <= comparison_target < len(inputs):
