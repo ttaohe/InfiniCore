@@ -10,6 +10,7 @@ from framework import (
     TensorSpec,
     TestCase,
     GenericTestRunner,
+    TensorInitializer,
     is_broadcast,
 )
 
@@ -108,6 +109,29 @@ def parse_test_cases():
                         description=f"SiLU - INPLACE(input)",
                     )
                 )
+
+    # Extra: zero-input stability check (captures NaN on all-zero FP16 tensors)
+    zero_shape = (1, 13, 32)
+    zero_dtype = infinicore.float16
+    zero_tol = _TOLERANCE_MAP.get(zero_dtype, {"atol": 1e-3, "rtol": 1e-3})
+
+    zero_input_spec = TensorSpec.from_tensor(
+        zero_shape,
+        None,
+        zero_dtype,
+        init_mode=TensorInitializer.ZEROS,
+    )
+
+    test_cases.append(
+        TestCase(
+            inputs=[zero_input_spec],
+            kwargs={},
+            output_spec=None,
+            comparison_target=None,
+            tolerance=zero_tol,
+            description="SiLU - ZERO_INPUT_FP16",
+        )
+    )
 
     return test_cases
 

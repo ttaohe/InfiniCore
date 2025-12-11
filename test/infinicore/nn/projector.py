@@ -51,6 +51,8 @@ class OpTest(BaseOperatorTest):
 
     def __init__(self):
         super().__init__("MlpProjector")
+        # 用于在 torch_operator 和 infinicore_operator 之间共享同一份 PyTorch MLP 权重
+        self._last_torch_mlp = None
 
     def get_test_cases(self):
         return parse_test_cases()
@@ -66,6 +68,8 @@ class OpTest(BaseOperatorTest):
             torch.nn.Linear(hidden, C_out, device=device, dtype=dtype),
         )
 
+        # 记录这次构建的 mlp，infinicore_operator 会用到同一份权重
+        self._last_torch_mlp = mlp
         return mlp(x)
 
     def infinicore_operator(self, x, C_in, C_out, hidden):
@@ -78,19 +82,12 @@ class OpTest(BaseOperatorTest):
             dtype=x.dtype,
         )
 
-        # 将 PyTorch 线性层的参数 copy 到 InfiniCore Projector 里
-        # 为了保证严格对齐，我们重建一份与 torch_operator 相同结构的 torch MLP，
-        # 然后把其参数拷贝到 proj 中，再用 proj 做前向，最后用同一个 torch MLP 做 reference。
-        device = x.device
-        dtype = x.dtype
+        # 将上一次 torch_operator 中构建的 torch_mlp 的参数写入 InfiniCore projector，
+        # 确保两边权重完全一致。
+        torch_mlp = self._last_torch_mlp
+        if torch_mlp is None:
+            raise RuntimeError("Torch MLP is not initialized before infinicore_operator.")
 
-        torch_mlp = torch.nn.Sequential(
-            torch.nn.Linear(C_in, hidden, device=device, dtype=dtype),
-            torch.nn.SiLU(),
-            torch.nn.Linear(hidden, C_out, device=device, dtype=dtype),
-        )
-
-        # 将 torch_mlp 的参数写入 InfiniCore projector
         with torch.no_grad():
             # 第一层
             w1 = torch_mlp[0].weight  # [hidden, C_in]

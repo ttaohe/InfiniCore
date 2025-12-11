@@ -13,6 +13,9 @@ from .conv2d import conv2d
 from .patchify import patchify
 from .kvcache import init_kv_cache, slice_kv_cache, update_kv_cache
 from .positional_encoding_2d import add_2d_positional_encoding
+from .image_newline import add_image_newline
+from .view_separator import add_view_separator
+from .vision_tokens import build_vision_tokens
 
 __all__ = [
     "causal_softmax",
@@ -33,5 +36,8 @@ __all__ = [
     "update_kv_cache",
     "slice_kv_cache",
     "add_2d_positional_encoding",
+    "add_image_newline",
+    "add_view_separator",
+    "build_vision_tokens",
     "RopeAlgo",
 ]

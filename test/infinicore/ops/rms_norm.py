@@ -10,6 +10,7 @@ from framework import (
     TensorSpec,
     TestCase,
     GenericTestRunner,
+    TensorInitializer,
     is_broadcast,
 )
 
@@ -119,6 +120,40 @@ def parse_test_cases():
                         )
                     )
 
+    # Extra: large-magnitude FP16 input to mimic VisionEncoder.norm1 场景
+    large_x_shape = (1, 13, 32)
+    large_w_shape = (32,)
+    large_dtype = infinicore.float16
+    large_tolerance = _TOLERANCE_MAP.get(large_dtype, {"atol": 2e-3, "rtol": 2e-3})
+
+    # 使用 MANUAL 初始化，在 Torch 侧直接构造 1e4 量级的输入，再由框架统一转换到 InfiniCore
+    large_x_base = torch.randn(large_x_shape, dtype=torch.float32) * 1e4
+
+    large_x_spec = TensorSpec.from_tensor(
+        large_x_shape,
+        None,
+        large_dtype,
+        init_mode=TensorInitializer.MANUAL,
+        set_tensor=large_x_base,
+    )
+    large_w_spec = TensorSpec.from_tensor(
+        large_w_shape,
+        None,
+        large_dtype,
+        init_mode=TensorInitializer.ONES,
+    )
+
+    test_cases.append(
+        TestCase(
+            inputs=[large_x_spec, large_w_spec],
+            kwargs={"epsilon": _EPSILON},
+            output_spec=None,
+            comparison_target=None,
+            tolerance=large_tolerance,
+            description="RMSNorm - LARGE_FP16_SCALE_1e4",
+        )
+    )
+
     return test_cases
 
 
@@ -134,6 +169,26 @@ class OpTest(BaseOperatorTest):
     def torch_operator(self, x, weight, epsilon=_EPSILON, out=None, **kwargs):
         """PyTorch RMSNorm implementation"""
         input_dtype = x.dtype
+
+        # Debug: 打印当前输入/权重的 shape 和 stride，便于与 InfiniCore 路径对齐
+        # 仅在小规模场景下打印（如 VisionEncoder demo 对齐用的 (1, 13, 32)）
+        if x.dim() in (2, 3) and x.numel() <= 1 * 13 * 32:
+            print(
+                "[RMSNorm OpTest][torch] x shape:",
+                tuple(x.shape),
+                "stride:",
+                tuple(x.stride()),
+                "dtype:",
+                x.dtype,
+            )
+            print(
+                "[RMSNorm OpTest][torch] w shape:",
+                tuple(weight.shape),
+                "stride:",
+                tuple(weight.stride()),
+                "dtype:",
+                weight.dtype,
+            )
 
         # Convert to float32 for numerical stability
         hidden_states = x.to(torch.float32)
@@ -154,6 +209,28 @@ class OpTest(BaseOperatorTest):
     def infinicore_operator(self, x, weight, epsilon=_EPSILON, out=None, **kwargs):
         """InfiniCore RMSNorm implementation"""
         import infinicore.nn.functional as F
+        from infinicore.utils import to_torch
+
+        # Debug: 打印 InfiniCore Tensor 转成 torch 之后的 shape/stride，核对布局
+        x_t = to_torch(x)
+        w_t = to_torch(weight)
+        if x_t.dim() in (2, 3) and x_t.numel() <= 1 * 13 * 32:
+            print(
+                "[RMSNorm OpTest][infini] x shape:",
+                tuple(x_t.shape),
+                "stride:",
+                tuple(x_t.stride()),
+                "dtype:",
+                x_t.dtype,
+            )
+            print(
+                "[RMSNorm OpTest][infini] w shape:",
+                tuple(w_t.shape),
+                "stride:",
+                tuple(w_t.stride()),
+                "dtype:",
+                w_t.dtype,
+            )
 
         return F.rms_norm(x, weight.shape, weight, epsilon, out=out)
 

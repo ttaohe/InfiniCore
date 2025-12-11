@@ -45,12 +45,16 @@ class Linear(Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        # 使用安全的默认初始化，避免未初始化的 empty 导致 NaN。
+        # 这里先用全零权重作为占位；在实际模型加载/训练时通常会被覆盖为预训练权重。
         self.weight = Parameter(
-            infinicore.empty([out_features, in_features], **factory_kwargs)
+            infinicore.zeros([out_features, in_features], **factory_kwargs)
         )
 
         if bias:
-            self.bias = Parameter(infinicore.empty([out_features], **factory_kwargs))
+            self.bias = Parameter(
+                infinicore.zeros([out_features], **factory_kwargs)
+            )
         else:
             self.register_parameter("bias", None)
 

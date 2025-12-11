@@ -51,19 +51,20 @@ class MlpProjector(Module):
         }
 
         # 第一层权重 [hidden_features, in_features]
+        # 使用零初始化作为安全占位，实际训练/加载权重时会被覆盖。
         self.fc1_weight = Parameter(
-            infinicore.empty([hidden_features, in_features], **factory_kwargs)
+            infinicore.zeros([hidden_features, in_features], **factory_kwargs)
         )
         self.fc1_bias = Parameter(
-            infinicore.empty([hidden_features], **factory_kwargs)
+            infinicore.zeros([hidden_features], **factory_kwargs)
         )
 
         # 第二层权重 [out_features, hidden_features]
         self.fc2_weight = Parameter(
-            infinicore.empty([out_features, hidden_features], **factory_kwargs)
+            infinicore.zeros([out_features, hidden_features], **factory_kwargs)
         )
         self.fc2_bias = Parameter(
-            infinicore.empty([out_features], **factory_kwargs)
+            infinicore.zeros([out_features], **factory_kwargs)
         )
 
     def forward(self, x: Tensor) -> Tensor:

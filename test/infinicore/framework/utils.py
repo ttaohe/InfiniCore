@@ -31,8 +31,11 @@ def debug(actual, desired, atol=0, rtol=1e-2, equal_nan=False, verbose=True):
 
     import numpy as np
 
+    # detach 之后再转 numpy，避免 requires_grad 时直接 .numpy() 抛错
+    actual_np = actual.detach().cpu().numpy()
+    desired_np = desired.detach().cpu().numpy()
     np.testing.assert_allclose(
-        actual.cpu(), desired.cpu(), rtol, atol, equal_nan, verbose=True
+        actual_np, desired_np, rtol, atol, equal_nan, verbose=True
     )
 
 

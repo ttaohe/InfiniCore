@@ -48,8 +48,9 @@ class RMSNorm(Module):
 
         self.normalized_shape = list(normalized_shape)
         self.eps = eps
+        # 与 TorchRMSNorm / 大多数实现对齐：默认将权重初始化为 1，避免未初始化导致的 NaN
         self.weight = Parameter(
-            infinicore.empty(self.normalized_shape, **factory_kwargs)
+            infinicore.ones(self.normalized_shape, **factory_kwargs)
         )
 
     def forward(self, x: Tensor) -> Tensor:

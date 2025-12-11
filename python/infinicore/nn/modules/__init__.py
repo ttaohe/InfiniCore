@@ -6,6 +6,9 @@ from .rope import RoPE
 from .sparse import Embedding
 from .mla import MLAAttention
 from .projector import MlpProjector
+from .vision_frontend import VisionFrontend
+from .vit_block import ViTBlock, ViTSelfAttention
+from .vision_encoder import VisionEncoder
 
 __all__ = [
     "Linear",
@@ -14,6 +17,10 @@ __all__ = [
     "RoPE",
     "MLAAttention",
     "MlpProjector",
+    "VisionFrontend",
+    "ViTBlock",
+    "ViTSelfAttention",
+    "VisionEncoder",
     "ModuleList",
     "Module",
 ]
